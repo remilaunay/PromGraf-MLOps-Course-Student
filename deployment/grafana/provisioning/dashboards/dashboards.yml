@@ -9,3 +9,12 @@ providers:
     editable: true
     options:
       path: /var/lib/grafana/dashboards
+  - name: Infrastructure
+    orgId: 1
+    folder: Infrastructure
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards-infrastructure
