@@ -1,0 +1,103 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Performances et activité de la News Classifier API à partir des métriques Prometheus.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Nombre total de requêtes /predict observées sur la période sélectionnée.",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "expr": "sum(increase(api_requests_total{endpoint=\"/predict\"}[$__range]))", "legendFormat": "Requêtes", "refId": "A" }],
+      "title": "Requêtes totales",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Débit de requêtes sur /predict.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 9, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (status_code) (rate(api_requests_total{endpoint=\"/predict\"}[$__rate_interval]))", "legendFormat": "HTTP {{status_code}}", "refId": "A" }],
+      "title": "Débit des requêtes par code HTTP",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "95e percentile de latence calculé à partir de l'histogramme.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "unit": "s", "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 9, "x": 15, "y": 0 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(api_request_duration_seconds_bucket{endpoint=\"/predict\"}[$__rate_interval])))", "legendFormat": "P95", "refId": "A" }],
+      "title": "Latence P95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Part des requêtes /predict terminées avec une erreur HTTP (code 4xx ou 5xx).",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 0.01 }, { "color": "red", "value": 0.05 }] }, "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 5 },
+      "id": 4,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "expr": "sum(rate(api_requests_total{endpoint=\"/predict\",status_code=~\"4..|5..\"}[$__rate_interval])) / clamp_min(sum(rate(api_requests_total{endpoint=\"/predict\"}[$__rate_interval])), 1e-9)", "legendFormat": "Taux d'erreur", "refId": "A" }],
+      "title": "Taux d'erreur HTTP",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Nombre de prédictions par catégorie retournée par le modèle.",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "id": 5,
+      "options": { "displayLabels": ["name", "value"], "legend": { "displayMode": "list", "placement": "right", "showLegend": true }, "pieType": "donut", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [{ "expr": "sum by (category) (increase(predictions_by_category[$__range]))", "legendFormat": "{{category}}", "refId": "A" }],
+      "title": "Répartition des prédictions par catégorie",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Volume et latence moyenne par code HTTP ; les valeurs sont calculées sur l'intervalle sélectionné.",
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [{ "matcher": { "id": "byName", "options": "Latence moyenne (s)" }, "properties": [{ "id": "unit", "value": "s" }] }] },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 10 },
+      "id": 6,
+      "options": { "cellHeight": "sm", "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Requêtes" }] },
+      "targets": [
+        { "expr": "sum by (status_code) (increase(api_requests_total{endpoint=\"/predict\"}[$__range]))", "format": "table", "instant": true, "legendFormat": "Requêtes", "refId": "A" },
+        { "expr": "sum by (status_code) (rate(api_request_duration_seconds_sum{endpoint=\"/predict\"}[$__rate_interval])) / clamp_min(sum by (status_code) (rate(api_request_duration_seconds_count{endpoint=\"/predict\"}[$__rate_interval])), 1e-9)", "format": "table", "instant": true, "legendFormat": "Latence moyenne (s)", "refId": "B" }
+      ],
+      "title": "Détail par code HTTP",
+      "transformations": [{ "id": "joinByField", "options": { "byField": "status_code", "mode": "outer" } }, { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "Value #A": "Requêtes", "Value #B": "Latence moyenne (s)" } } }],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["api", "prometheus", "performance"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Performances de l'API",
+  "uid": "api-performance",
+  "version": 1
+}
