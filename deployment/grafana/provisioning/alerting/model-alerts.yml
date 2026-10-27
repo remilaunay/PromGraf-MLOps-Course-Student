@@ -1,0 +1,77 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: model-performance
+    folder: Model Alerts
+    interval: 1m
+    rules:
+      - uid: model-accuracy-below-80
+        title: Model accuracy below 80%
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: model_accuracy_score < 0.80
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: critical
+          team: mlops
+        annotations:
+          summary: Model accuracy is below 80%
+          description: >-
+            The latest evaluated model accuracy is below the 0.80 threshold
+            for at least five minutes. Check recent evaluation data and model
+            performance.
+
+      - uid: model-category-share-over-50
+        title: Prediction category share above 50% for one hour
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: >-
+                sum by (category) (increase(predictions_by_category_total[1h]))
+                / on() group_left
+                clamp_min(sum(increase(predictions_by_category_total[1h])), 1)
+                > 0.50
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: warning
+          team: mlops
+        annotations:
+          summary: A prediction category exceeds 50% of the hourly volume
+          description: >-
+            Category {{ $labels.category }} accounts for more than half of
+            predictions in the rolling one-hour window, sustained for five
+            minutes. Check for a distribution shift or upstream data changes.
